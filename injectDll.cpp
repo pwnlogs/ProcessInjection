@@ -8,6 +8,15 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
                      )
 {
-    MessageBox(NULL, "Hello", "From DLL", MB_OK);
+	switch (ul_reason_for_call)
+	{
+		case DLL_PROCESS_ATTACH:
+			MessageBox(NULL, "Hello", "From DLL", MB_OK);
+		case DLL_THREAD_ATTACH:
+		case DLL_THREAD_DETACH:
+		case DLL_PROCESS_DETACH:
+			break;
+	}
+	// MessageBox(NULL, "Hello", "From DLL", MB_OK);
     return TRUE;
 }

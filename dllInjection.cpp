@@ -1,13 +1,12 @@
 #include <Windows.h>
 #include <iostream>
-#include <filesystem>
-#include <atlconv.h>
+// #include <atlconv.h>
 #include <TlHelp32.h>
 #include <tchar.h>
 #include <Winternl.h>
 #include <fstream>
 #include <wchar.h>
-#include <future>
+// #include <future>
 
 #define RTN_OK 0
 #define RTN_USAGE 1
