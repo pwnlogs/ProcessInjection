@@ -45,8 +45,7 @@ void main()
 	auto size = strlen(lpdllpath)*sizeof(TCHAR);
 	cout<<"[i] full path: "<<lpdllpath<<endl;
 
-	if (FindProcess("calc.exe", pid, tids)) 
-	{
+	if (FindProcess("calc.exe", pid, tids)) {
 		HANDLE hProcess = ::OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
 		if(hProcess==NULL){
 			cout<<"[!] failed to get handle for process: "<<pid<<endl;
@@ -65,12 +64,13 @@ void main()
 			return ;
 		}else{cout<<"[+] write to process success"<<endl;}
 
-		for(vector<DWORD>::size_type i = 0; i != tids.size(); i++) {
+		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<5; i++) {
 			DWORD tid = tids[i];
-			HANDLE hThread = ::OpenThread(THREAD_SET_CONTEXT, FALSE, tid);
+			HANDLE hThread = ::OpenThread(THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, tid);
+			cout<<endl;
 			if (hThread!=NULL) {
 				if(::QueueUserAPC(
-					(PAPCFUNC)::GetProcAddress(GetModuleHandle("kernel32"), "LoadLibraryW"),
+					(PAPCFUNC)::GetProcAddress(GetModuleHandle("kernel32"), "LoadLibraryA"),
 					hThread, 
 					(ULONG_PTR)p)==0){
 					cout<<"[!] failed to queue user apc"<<endl;
@@ -86,5 +86,8 @@ void main()
 		}
 		::VirtualFreeEx(hProcess, p, 0, MEM_RELEASE | MEM_DECOMMIT);
 		cout<<"[+] VirtualFreeEx"<<endl;
+	}
+	else{
+		cout<<"[!] specified process not found"<<endl;
 	}
 }
