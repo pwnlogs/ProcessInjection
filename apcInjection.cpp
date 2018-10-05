@@ -1,3 +1,8 @@
+/* Method of injecting payload using QueueUserAPC() function */
+/* Purpose:
+            Inject 'payload/injectDll.dll to calc.exe process
+            Make sure the calculator is running              */
+
 #include <windows.h>
 #include <TlHelp32.h>
 #include <vector>
@@ -39,7 +44,7 @@ void main()
 {
 	DWORD pid;
 	vector<DWORD> tids;
-	const char buffer[] = "injectDll.dll";
+	const char buffer[] = "payload/injectDll.dll";
 	char lpdllpath[MAX_PATH];
 	GetFullPathName(buffer, MAX_PATH, lpdllpath, nullptr);
 	auto size = strlen(lpdllpath)*sizeof(TCHAR);
