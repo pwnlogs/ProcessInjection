@@ -5,7 +5,7 @@
 		
 	Steps:
 		1. cl /LD injectDll.cpp
-		2. cl dllinjection.cpp
+		2. cl payload\dllinjection.cpp
 		2. dllInjection.exe injectDll.dll chrome.exe
 
 	Notes:

