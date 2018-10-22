@@ -28,7 +28,7 @@ pop    edx
 pop    ecx
 pop    ebx
 pop    eax
-xor    eax, eax
+xor    eax,eax
 mov    esp,ebp
 pop    ebp
-ret
+ret    4
