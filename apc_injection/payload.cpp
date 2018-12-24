@@ -5,7 +5,7 @@
 #include <windows.h>
 #include "header.h"
 
-void __stdcall Papcfunc(ULONG_PTR parameter){
+void __stdcall Papcfunc(PVOID p1, PVOID p2, PVOID p3){
 
     #define noebp_origebp               0x00
 
@@ -20,6 +20,8 @@ void __stdcall Papcfunc(ULONG_PTR parameter){
     HMODULE (__stdcall *LoadLibraryA)       (char*)                         ;
     void*   (__stdcall *GetProcAddress)     (void*, char*)                  ;
     int     (__stdcall *MessageBox)         (HWND, LPCTSTR, LPCTSTR, UINT)  ;
+
+
     
     __asm{
         jmp main

